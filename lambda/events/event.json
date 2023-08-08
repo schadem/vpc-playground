@@ -1,0 +1,39 @@
+{
+    "Records": [
+        {
+            "eventVersion": "2.1",
+            "eventSource": "aws:s3",
+            "awsRegion": "us-east-1",
+            "eventTime": "2023-08-08T19:07:07.507Z",
+            "eventName": "ObjectCreated:Put",
+            "userIdentity": {
+                "principalId": "AWS:AROAJAWYB5QWSFN26M4JE:i-0cb95bc5ee9526413"
+            },
+            "requestParameters": {
+                "sourceIPAddress": "172.31.31.234"
+            },
+            "responseElements": {
+                "x-amz-request-id": "8WWS58MNNBRRVWGK",
+                "x-amz-id-2": "UcNLUzhMijmIkHbEarKZQjUU0v3ChHyGXPC/AM50EKH5qi5HnTRnn+aZ4Pt00Z5AhuW+V4fHlWRJh6/pQUVv3xlQcQWU3l1L"
+            },
+            "s3": {
+                "s3SchemaVersion": "1.0",
+                "configurationId": "ZDYxNTMxMzctNDhkZi00YjkyLWEzOTAtZWE3MTEyM2Q5NjQ1",
+                "bucket": {
+                    "name": "vpcplaygroundstack-vpcplayground03612064-160vvko9z6v5k",
+                    "ownerIdentity": {
+                        "principalId": "AZUHWRTWWDCTW"
+                    },
+                    "arn": "arn:aws:s3:::vpcplaygroundstack-vpcplayground03612064-160vvko9z6v5k"
+                },
+                "object": {
+                    "key": "uploads/paystub-small.png",
+                    "size": 1790415,
+                    "eTag": "abdfac63fc9f039eedf9cf2e765a5209",
+                    "versionId": "iVjVohLgDNznuxTjO0Q7vBWJEEHwqwwN",
+                    "sequencer": "0064D2925B60037D79"
+                }
+            }
+        }
+    ]
+}
