@@ -1,5 +1,6 @@
 {
   "app": "npx ts-node --prefer-ts-exts bin/vpc-playground.ts",
+  "bastion": "npx ts-node --prefer-ts-exts bin/bastion-host.ts",
   "watch": {
     "include": [
       "**"
