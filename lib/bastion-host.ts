@@ -1,11 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 export class BastionHost extends cdk.Stack {
   constructor(scope: Construct,id: string,props?: cdk.StackProps) {
     super(scope,id,props);
+
+    const inputPrefix="uploads";
+    const outputPrefix="outputs";
 
     // Create VPC
     const vpc=new ec2.Vpc(this,'MyVPC',{
@@ -24,26 +28,56 @@ export class BastionHost extends cdk.Stack {
       ],
     });
 
-    // INSTANCE ROLE
+    // Add S3 endpoint
+    const vpceS3 = vpc.addGatewayEndpoint('S3Endpoint',{
+      service: ec2.GatewayVpcEndpointAwsService.S3,
+    });
+
+    // START: S3 Bucket and policy
+    const s3Bucket=new s3.Bucket(this,'BastionHostBucket',{
+      versioned: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,  // NOT recommended for production code
+    });
+
+    const denyBucketPolicyStatement=new iam.PolicyStatement({
+      actions: ['s3:GetObject','s3:ListBucket','s3:PutObject'], // Specify desired actions here
+      resources: [s3Bucket.bucketArn+'/*',s3Bucket.bucketArn], // Apply to all objects in the bucket
+      effect: iam.Effect.DENY,
+      principals: [new iam.ArnPrincipal('*')],
+      conditions: {
+        'StringNotEquals': {
+          'aws:sourceVpce': vpceS3.vpcEndpointId,
+          'aws:CalledViaFirst': [ 'textract.amazonaws.com', 'cloudformation.amazonaws.com' ],
+        }
+      },
+    });
+
+    // const allowBucketPolicyStatement=new iam.PolicyStatement({
+    //   actions: ['*'], // Specify desired actions here
+    //   resources: ['*'], // Apply to all objects in the bucket
+    //   effect: iam.Effect.ALLOW,
+    //   principals: [new iam.ArnPrincipal('*')],
+    // });
+
+    // Attach the bucket policy statement to the bucket
+    s3Bucket.addToResourcePolicy(denyBucketPolicyStatement);
+    // s3Bucket.addToResourcePolicy(allowBucketPolicyStatement);
+    // END: S3 Bucket and policy
+
+    // START: EC2 INSTANCE ROLE
     const instanceRole=new iam.Role(this,'InstanceRole',{
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
     });
-
     instanceRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore'));
-
-    // S3 policy
+    // INSTANCE POLICY S3 policy
     const s3Policy=new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       resources: ['*'],
       actions: ['s3:*']
     });
-
     instanceRole.addToPolicy(s3Policy);
+    // END: EC2 INSTANCE ROLE
 
-    // Add S3 endpoint
-    vpc.addGatewayEndpoint('S3Endpoint',{
-      service: ec2.GatewayVpcEndpointAwsService.S3,
-    });
     // Create SSM endpoint for Bastion Host
     const ssmEndpoint=vpc.addInterfaceEndpoint('SSMEndpoint',{
       service: ec2.InterfaceVpcEndpointAwsService.SSM,
@@ -87,5 +121,11 @@ export class BastionHost extends cdk.Stack {
     ssmEndpoint.connections.allowDefaultPortFrom(ec2Instance);
     // ec2Endpoint.connections.allowDefaultPortFrom(ec2Instance);
     ec2MessagesEndpoint.connections.allowDefaultPortFrom(ec2Instance);
+
+
+    // OUTPUT CFN
+    new cdk.CfnOutput(this,'DocumentUpload',{
+      value: `s3://${s3Bucket.bucketName}/${inputPrefix}/`,
+    });
   }
 }
